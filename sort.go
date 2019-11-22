@@ -90,19 +90,11 @@ func FindLatestPrice(prices []ecsService.SpotPriceType) ecsService.SpotPriceType
 }
 
 func GetPossibility(prices []ecsService.SpotPriceType) float64 {
-	var avg float64 = 0
-	var sum float64 = 0
 	var variance float64 = 0
 	var sigma float64 = 0
-	for _, price := range prices {
-		sum += price.SpotPrice
-	}
-
-	avg = sum / float64(len(prices))
 
 	for _, price := range prices {
-		sum += price.SpotPrice
-		variance += math.Pow((price.SpotPrice - avg), 2)
+		variance += math.Pow((price.SpotPrice - 0.1*price.OriginPrice), 2)
 	}
 
 	sigma = math.Sqrt(variance / float64(len(prices)))
