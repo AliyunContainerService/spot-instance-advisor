@@ -1,11 +1,11 @@
 package main
 
 import (
-	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
-	"time"
-	log "github.com/Sirupsen/logrus"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
+	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"math"
+	"time"
 )
 
 const (

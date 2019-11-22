@@ -1,12 +1,12 @@
 package main
 
 import (
-	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
-	"time"
 	"fmt"
+	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/fatih/color"
 	"sort"
 	"strings"
+	"time"
 )
 
 const (
@@ -50,11 +50,11 @@ func (ms *MetaStore) Initialize(region string) {
 			for _, resource := range zoneStock.AvailableResources.AvailableResource[0].SupportedResources.SupportedResource {
 				if resource.Value == instanceTypeId {
 					found = 1
-					break;
+					break
 				}
 			}
 			if found == 1 {
-				break;
+				break
 			}
 		}
 		if found == 0 {
@@ -101,7 +101,7 @@ func (ms *MetaStore) FetchSpotPrices(instanceTypes []string, resolution int) (hi
 		req.InstanceType = instanceType
 		resp, err := ms.DescribeSpotPriceHistory(req)
 
-		resolutionDuration := time.Duration(resolution * -1*24) * time.Hour
+		resolutionDuration := time.Duration(resolution*-1*24) * time.Hour
 		req.StartTime = time.Now().Add(resolutionDuration).Format(TimeLayout)
 		if err != nil {
 			continue
@@ -150,7 +150,7 @@ func (ms *MetaStore) PrintPriceRank(prices SortedInstancePrices, cutoff int, lim
 
 	for index, price := range prices {
 		if index >= limit {
-			break;
+			break
 		}
 		if price.Discount <= float64(cutoff) {
 			color.Green("%20s %20s %15.4f %15.1f %15.1f\n", price.InstanceTypeId, price.ZoneId, price.PricePerCore, price.Discount, price.Possibility)

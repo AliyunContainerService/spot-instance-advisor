@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"fmt"
+	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 )
 
 var (
