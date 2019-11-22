@@ -146,16 +146,16 @@ func (ms *MetaStore) SpotPricesAnalysis(historyPrices map[string][]ecsService.Sp
 func (ms *MetaStore) PrintPriceRank(prices SortedInstancePrices, cutoff int, limit int) {
 	sort.Sort(prices)
 
-	color.Green("%20s %20s %15s %15s %15s\n", "InstanceTypeId", "ZoneId", "Price(Core)", "Discount", "ratio")
+	color.Green("%30s %20s %15s %15s %15s\n", "InstanceTypeId", "ZoneId", "Price(Core)", "Discount", "ratio")
 
 	for index, price := range prices {
 		if index >= limit {
 			break
 		}
 		if price.Discount <= float64(cutoff) {
-			color.Green("%20s %20s %15.4f %15.1f %15.1f\n", price.InstanceTypeId, price.ZoneId, price.PricePerCore, price.Discount, price.Possibility)
+			color.Green("%30s %20s %15.4f %15.1f %15.1f\n", price.InstanceTypeId, price.ZoneId, price.PricePerCore, price.Discount, price.Possibility)
 		} else {
-			color.Blue("%20s %20s %15.4f %15.1f %15.1f\n", price.InstanceTypeId, price.ZoneId, price.PricePerCore, price.Discount, price.Possibility)
+			color.Blue("%30s %20s %15.4f %15.1f %15.1f\n", price.InstanceTypeId, price.ZoneId, price.PricePerCore, price.Discount, price.Possibility)
 		}
 	}
 }
