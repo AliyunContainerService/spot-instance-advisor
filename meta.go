@@ -99,13 +99,15 @@ func (ms *MetaStore) FetchSpotPrices(instanceTypes []string, resolution int) (hi
 		req := ecsService.CreateDescribeSpotPriceHistoryRequest()
 		req.NetworkType = "vpc"
 		req.InstanceType = instanceType
+		req.IoOptimized = "optimized"
 		resp, err := ms.DescribeSpotPriceHistory(req)
 
-		resolutionDuration := time.Duration(resolution*-1*24) * time.Hour
+		resolutionDuration := time.Duration(resolution * -1*24) * time.Hour
 		req.StartTime = time.Now().Add(resolutionDuration).Format(TimeLayout)
 		if err != nil {
 			continue
 		}
+
 		historyPrices[instanceType] = resp.SpotPrices.SpotPriceType
 	}
 
