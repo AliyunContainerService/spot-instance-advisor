@@ -2,15 +2,15 @@
 
 
 [[projects]]
-  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  digest = "1:36a75ab002c1cfb43bcc5d2ec10fbdc2a1136e9246a65e535f1d827435f28f17"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
-  version = "v1.4.2"
+  revision = "418b41d23a1bf978c06faea5313ba194650ac088"
+  version = "v0.8.7"
 
 [[projects]]
-  digest = "1:67e44232cf7aee534691f617573d6ebd5d330a4dc1a442bc0c57cc0ef436235a"
+  digest = "1:379fa75f6367419dbb88457aa18314de3006d86cba68cb17f83f7ace76178d78"
   name = "github.com/aliyun/alibaba-cloud-sdk-go"
   packages = [
     "sdk",
@@ -26,16 +26,24 @@
     "services/ecs",
   ]
   pruneopts = "UT"
-  revision = "bcb02064ded9e2abe19a942579f1d5005eabe64a"
-  version = "1.60.249"
+  revision = "6e775398604bdedf82e2ce58d5790ce0717dd602"
+  version = "v1.60.299"
 
 [[projects]]
-  digest = "1:865079840386857c809b72ce300be7580cb50d3d3129ce11bf9aa6ca2bc1934a"
+  digest = "1:fa00ec82372ac464a5d43cd483ea555b7f84681eff44cb9083a08dbd2ca7e01e"
   name = "github.com/fatih/color"
   packages = ["."]
   pruneopts = "UT"
-  revision = "5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4"
-  version = "v1.7.0"
+  revision = "1b35f289c47d5c73c398cea8e006b7bcb6234a96"
+  version = "v0.1"
+
+[[projects]]
+  digest = "1:cbec35fe4d5a4fba369a656a8cd65e244ea2c743007d8f6c1ccb132acf9d1296"
+  name = "github.com/gorilla/mux"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
+  version = "v1.7.3"
 
 [[projects]]
   digest = "1:b87714e57a511d88f307aba7d5b63522da12bed0a050889c81272fc50f71100e"
@@ -54,28 +62,12 @@
   version = "v1.1.8"
 
 [[projects]]
-  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
+  digest = "1:871aa208665f8c57d13ed13899c243454858ee6654cc4feed768096bcea6fbc3"
+  name = "github.com/mattn/go-runewidth"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
-  version = "v1.0.2"
-
-[[projects]]
-  digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
-  name = "github.com/mattn/go-colorable"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
-  version = "v0.0.9"
-
-[[projects]]
-  digest = "1:d62282425ffb75047679d7e2c3b980eea7f82c05ef5fb9142ee617ebac6e7432"
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "88ba11cfdc67c7588b30042edf244b2875f892b6"
-  version = "v0.0.10"
+  revision = "18c3d09a134a52720932bbaa92c798a0ab111004"
+  version = "v0.0.7"
 
 [[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
@@ -94,12 +86,20 @@
   version = "1.0.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:fc96eb481f72e9a5edeb4bb3f3610d3b9384c036f7c1e39f8c0dedff23d0c34d"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
+  digest = "1:b8261a46d75566ebf5b4fb6bb762f54f47e6633e0995118393afc80bb1f428f5"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "bd437916bb0eb726b873ee8e9b2dcf212d32e2fd"
+  revision = "876dd0e0227ec99c0243b639b92139915b65331a"
+  version = "v0.0.4"
+
+[[projects]]
+  branch = "master"
+  digest = "1:44fbfce27cb96b7d20217634af466093485a3e8132820acbe95949cb64e7fc60"
+  name = "github.com/shiena/ansicolor"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a422bbe96644373c5753384a59d678f7d261ff10"
 
 [[projects]]
   digest = "1:591460fbfc463bda7071ac906bed19cbf64cffd5fcb80a6d1490e87b9dfad942"
@@ -116,6 +116,8 @@
     "github.com/Sirupsen/logrus",
     "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs",
     "github.com/fatih/color",
+    "github.com/gorilla/mux",
+    "github.com/olekukonko/tablewriter",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
