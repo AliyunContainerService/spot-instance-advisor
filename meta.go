@@ -44,7 +44,7 @@ func (ms *MetaStore) Initialize(region string) {
 
 	zoneStocks := d_resp.AvailableZones.AvailableZone
 
-	for instanceTypeId, _ := range ms.InstanceFamilyCache {
+	for instanceTypeId := range ms.InstanceFamilyCache {
 		found := 0
 		for _, zoneStock := range zoneStocks {
 			for _, resource := range zoneStock.AvailableResources.AvailableResource[0].SupportedResources.SupportedResource {

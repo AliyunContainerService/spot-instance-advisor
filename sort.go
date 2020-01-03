@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-const (
-	TimestampFormat = "2019-11-20T06:00:00Z"
-)
-
 // data structure of instance prices
 type InstancePrice struct {
 	ecsService.InstanceType
@@ -30,20 +26,7 @@ func (sp SortedInstancePrices) Len() int {
 }
 
 func (sp SortedInstancePrices) Less(i, j int) bool {
-
-	if sp[i].PricePerCore < sp[j].PricePerCore {
-		return true
-	}
-
-	//////if sp[i].Possibility < sp[j].Possibility {
-	////	return true
-	//}
-
-	//if sp[i].Discount < sp[j].Discount {
-	//	return true
-	//}
-
-	return false
+	return sp[i].PricePerCore < sp[j].PricePerCore
 }
 
 func (sp SortedInstancePrices) Swap(i, j int) {
@@ -70,12 +53,12 @@ func FindLatestPrice(prices []ecsService.SpotPriceType) ecsService.SpotPriceType
 		if latestPrice.Timestamp == "" {
 			latestPrice = price
 		} else {
-			latestDate, err := time.Parse(time.RFC3339, fmt.Sprintf("%s", latestPrice.Timestamp))
+			latestDate, err := time.Parse(time.RFC3339, latestPrice.Timestamp)
 			if err != nil {
 				log.Panicf("Time format is not valid,because of %v", err)
 			}
 
-			currentDate, err := time.Parse(time.RFC3339, fmt.Sprintf("%s", price.Timestamp))
+			currentDate, err := time.Parse(time.RFC3339, price.Timestamp)
 			if err != nil {
 				log.Panicf("Time format is not valid,because of %v", err)
 			}
@@ -90,8 +73,8 @@ func FindLatestPrice(prices []ecsService.SpotPriceType) ecsService.SpotPriceType
 }
 
 func GetPossibility(prices []ecsService.SpotPriceType) float64 {
-	var variance float64 = 0
-	var sigma float64 = 0
+	variance := 0.0
+	sigma := 0.0
 
 	for _, price := range prices {
 		variance += math.Pow((price.SpotPrice - 0.1*price.OriginPrice), 2)
