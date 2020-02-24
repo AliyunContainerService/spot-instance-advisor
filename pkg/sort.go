@@ -11,11 +11,11 @@ import (
 // data structure of instance prices
 type InstancePrice struct {
 	ecsService.InstanceType
-	ZoneId       string
-	PricePerCore float64
-	Price        string
-	Discount     float64
-	Possibility  float64
+	ZoneId       string  `json:"zone_id"`
+	PricePerCore float64 `json:"price_per_core"`
+	Price        string  `json:"price"`
+	Discount     float64 `json:"discount"`
+	Possibility  float64 `json:"possibility"`
 }
 
 // sorted structure of

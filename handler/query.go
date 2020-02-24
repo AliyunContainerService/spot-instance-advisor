@@ -1,102 +1,84 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/IrisIris/spot-instance-advisor/pkg"
 	logger "github.com/Sirupsen/logrus"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
-	"time"
 )
 
 var QUERYNOTEMPTYFIELD = []string{"sys.ding.conversationTitle", "region"}
 
 func SpotHandler(w http.ResponseWriter, r *http.Request) {
 	vals := r.URL.Query()
-	resp := &DingDingRep{
+	resp := &pkg.DingDingRep{
 		Success:   true,
-		ErrorCode: strconv.Itoa(int(ErrorNone)),
+		ErrorCode: strconv.Itoa(int(pkg.ErrorNone)),
 		ErrorMsg:  "",
 		Fields:    nil,
 	}
-	logger.Info("input vals are :", vals)
-
-	// check && get json byte
-	jsonBytes, err := InputCommonCheck(w, vals, pkg.Cfg, &QUERYNOTEMPTYFIELD)
-	if jsonBytes == nil || err != nil {
-		logger.WithFields(logger.Fields{
-			"vals":          vals,
-			"notEmptyField": QUERYNOTEMPTYFIELD,
-			"error":         err,
-		}).Errorf("input common check error :")
-		resp = PackageResp(false, "input common check error: "+err.Error(), nil)
-		sendResponse(w, resp)
-		return
-	}
+	logger.Info("input query values are :", vals)
 
 	// get new advisor
-	advisor, err := pkg.NewAdvisor(jsonBytes)
+	advisor, err := pkg.NewAdisorByReq(&vals, pkg.Cfg, &QUERYNOTEMPTYFIELD)
 	if err != nil {
 		logger.WithFields(logger.Fields{
 			"advisor": *advisor,
 			"error":   err,
 		}).Errorf("new advisor error :")
-		resp = PackageResp(false, "new advisor err: "+err.Error(), nil)
-		sendResponse(w, resp)
+		resp = pkg.PackageResp(false, "new advisor err: "+err.Error(), nil)
+		pkg.SendResponse(w, resp)
 		return
 	}
 
-	DingDingTokens, err := GetDingDingTokens(vals, pkg.Cfg)
-	if err != nil {
-		resp = PackageResp(false, err.Error(), nil)
-		sendResponse(w, resp)
-	}
-
-	// check price max set or not
-	var priceMax float64
-	if _, ok := vals["price_max"]; !ok || len(vals["price_max"]) == 0 || len(vals["price_max"][0]) == 0 {
-		priceMax = 0.0
+	// check threshold set or not, if set is similar to threshold
+	if _, ok := vals["threshold"]; !ok || len(vals["threshold"]) == 0 || len(vals["threshold"][0]) == 0 {
 		resp.Fields = map[string]string{
-			"title": QUERYTITLE,
+			"title": pkg.QUERYTITLE,
 		}
-		go queryByReq(advisor, DingDingTokens)
+		converTitles := vals["sys.ding.conversationTitle"]
+		go queryByReq(advisor, &converTitles)
 	} else {
-		if toPriceMax, err := strconv.ParseFloat(vals["price_max"][0], 64); err != nil {
-			logger.Errorf("strconv ParseFloat vals price_max error", err.Error())
-			resp = PackageResp(false, "strconv ParseFloat vals price_max error: "+err.Error(), nil)
+		if _, err := strconv.ParseFloat(vals["threshold"][0], 64); err != nil {
+			logger.Errorf("parse  threshold from string to float  error", err.Error())
+			resp = pkg.PackageResp(false, "parse  threshold from string to float  error: "+err.Error(), nil)
+			pkg.SendResponse(w, resp)
 			return
-		} else {
-			priceMax = toPriceMax
-			resp.Fields = map[string]string{
-				"title": ALARMTITLE,
-			}
 		}
-		toShow := &[]pkg.AdvisorResponse{}
-		showed := &[]pkg.AdvisorChangedInstance{}
-		newChanged := &[]pkg.AdvisorResponse{}
-		var startTime *int64
-		startTime = new(int64)
-		*startTime = time.Now().Unix()
-		//go judgeOneByCron(advisor, DingDingTokens, priceMax, lastShow, toShow)
-		go judgeOne(advisor, DingDingTokens, priceMax, toShow, showed, newChanged, startTime)
-	}
-	fmt.Println("SpotHandler-priceMax is", priceMax)
+		resp.Fields = map[string]string{
+			"title": pkg.ALARMTITLE,
+		}
+		filter := pkg.FilterConfig{
+			JudgedByField: pkg.Cfg.DefaultFilter.JudgedByField,
+			Threshold:     vals["threshold"][0],
+		}
+		if _, ok := vals["judge"]; ok && len(vals["judge"]) != 0 || len(vals["judge"][0]) != 0 {
+			filter.JudgedByField = vals["judge"][0]
+		}
 
-	sendResponse(w, resp)
+		alarmConfig := &pkg.AlarmConfig{
+			Filter:  &filter,
+			Sender:  pkg.Cfg.DefaultSender,
+			Pattern: pkg.Cfg.DefaultPattern,
+		}
+
+		showed := make((map[string]*pkg.ChangedOne))
+		alarmRecord := AlarmJobRecord{
+			NowResp:    &[]pkg.InstancePrice{},
+			Showed:     &showed,
+			NewChanged: &[]pkg.InstancePrice{},
+		}
+		for _, convTitle := range vals["sys.ding.conversationTitle"] {
+			go alarmJob(advisor, convTitle, alarmConfig, alarmRecord)
+		}
+	}
+
+	pkg.SendResponse(w, resp)
 }
 
-func queryByReq(advisor *pkg.Advisor, DingDingTokens *[]string) {
-	msg := MarkdownMsg{
-		MsgType: MarkdownType,
-		Markdown: Markdown{
-			Title: QUERYTITLE,
-			Text:  "无搜索结果",
-		},
-	}
-	qType := OnceQuery
-
+func queryByReq(advisor *pkg.Advisor, converTitles *[]string) {
+	showStr := ""
 	spotInstancePrices, err := advisor.SpotPricesAnalysis()
 	if err != nil {
 		logger.WithFields(logger.Fields{
@@ -105,65 +87,44 @@ func queryByReq(advisor *pkg.Advisor, DingDingTokens *[]string) {
 		}).Errorf("get spotInstancePrices error :")
 		return
 	}
-
-	if len(spotInstancePrices) == 0 {
-		for _, token := range *DingDingTokens {
-			err = sendDingDing(msg, token)
-			if err != nil {
-				logger.Error("sendDingDing return error:", err)
-				continue
-			}
+	if len(spotInstancePrices) != 0 {
+		sort.Sort(spotInstancePrices)
+		// change to []interface{}
+		interfaceSlice := make([]interface{}, len(spotInstancePrices))
+		for i, d := range spotInstancePrices {
+			interfaceSlice[i] = d
 		}
-		return
-	}
 
-	sort.Sort(spotInstancePrices)
-
-	toShow := []pkg.AdvisorResponse{}
-	count := 0
-	for _, item := range spotInstancePrices {
-		if count >= advisor.Limit {
-			break
+		var builder = &pkg.DDMarkdownTableBuilder{}
+		builder.DDMarkdownTable = &pkg.DDMarkdownTable{
+			Advisor:        advisor,
+			MsgType:        pkg.OnceQuery,
+			ContentPrepare: pkg.ContentPrepare{OriginData: &interfaceSlice},
+			Config: &pkg.AlarmConfig{
+				Filter:  pkg.Cfg.DefaultFilter,
+				Sender:  pkg.Cfg.DefaultSender,
+				Pattern: pkg.Cfg.DefaultPattern,
+			},
 		}
-		toShow = append(toShow, pkg.AdvisorResponse{
-			InstanceTypeId: strings.Replace(item.InstanceTypeId, "ecs.", "", 1),
-			ZoneId:         strings.Replace(item.ZoneId, advisor.Region+"-", "", -1),
-			PricePerCore:   pkg.Decimal(item.PricePerCore),
-		})
-		count++
+		director := &pkg.MessageDirector{builder}
+		showStr = director.Create(builder.DDMarkdownTable.Config)
 	}
 
-	SendResToDingDing(advisor, DingDingTokens, &toShow, qType, 0.0, false)
-}
-
-func getByReq(advisor *pkg.Advisor) *[]pkg.AdvisorResponse {
-	spotInstancePrices, err := advisor.SpotPricesAnalysis()
-	if err != nil {
-		logger.WithFields(logger.Fields{
-			"spotInstancePrices": spotInstancePrices,
-			"error":              err,
-		}).Errorf("get spotInstancePrices error :")
-		return nil
-	}
-
-	if len(spotInstancePrices) == 0 {
-		return nil
-	}
-
-	sort.Sort(spotInstancePrices)
-
-	toShow := []pkg.AdvisorResponse{}
-	count := 0
-	for _, item := range spotInstancePrices {
-		if count >= advisor.Limit {
-			break
+	for _, senderConfig := range pkg.Cfg.DefaultSender {
+		logger.Errorf("converTitles is ", converTitles)
+		sender := pkg.NewSendor(senderConfig)
+		if sender == nil {
+			logger.WithField("sender_config", senderConfig).Error("get sender is nil, maybe unknown sender name")
+			return
 		}
-		toShow = append(toShow, pkg.AdvisorResponse{
-			InstanceTypeId: strings.Replace(item.InstanceTypeId, "ecs.", "", 1),
-			ZoneId:         strings.Replace(item.ZoneId, advisor.Region+"-", "", -1),
-			PricePerCore:   pkg.Decimal(item.PricePerCore),
-		})
-		count++
+		err := sender.SetTokens(converTitles)
+		if err != nil {
+			logger.Errorf("set sender tokens failed:", err)
+			return
+		}
+
+		sender.SetQueryType(pkg.OnceQuery)
+		sender.SetToSend(showStr)
+		sender.Send()
 	}
-	return &toShow
 }

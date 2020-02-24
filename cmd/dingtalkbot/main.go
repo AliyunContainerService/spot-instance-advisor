@@ -11,7 +11,6 @@ import (
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/spot", handler.SpotHandler)
-	r.HandleFunc("/alarm", handler.AlarmHandler)
 	http.Handle("/", r)
 
 	srv := &http.Server{

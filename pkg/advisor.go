@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	logger "github.com/Sirupsen/logrus"
 	ecsService "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"net/url"
+	"sort"
 )
 
 var (
@@ -19,42 +22,46 @@ const (
 )
 
 type Advisor struct {
-	AccessKeyId     string `json:"access_key_id,omitempty"`
-	AccessKeySecret string `json:"access_key_secret,omitempty"`
-	Region          string `json:"region"`
-	Cpu             int    `json:"cpu"`
-	Memory          int    `json:"memory"`
-	MaxCpu          int    `json:"max_cpu"`
-	MaxMemory       int    `json:"max_memory"`
-	Family          string `json:"family,omitempty"`
-	Cutoff          int    `json:"cutoff"`
-	Limit           int    `json:"limit"`
-	Resolution      int    `json:"resolution"`
+	AccessKeyId     string  `json:"access_key_id,omitempty"`
+	AccessKeySecret string  `json:"access_key_secret,omitempty"`
+	Region          string  `json:"region"`
+	Cpu             int     `json:"cpu"`
+	Memory          int     `json:"memory"`
+	MaxCpu          int     `json:"max_cpu"`
+	MaxMemory       int     `json:"max_memory"`
+	Family          string  `json:"family,omitempty"`
+	Cutoff          float64 `json:"cutoff"`
+	Limit           int     `json:"limit"`
+	Resolution      int     `json:"resolution"`
 }
 
-type ChAdvisor struct {
-	Region    string `json:"地域"`
-	Cpu       int    `json:"cpu最小值"`
-	Memory    int    `json:"memory最小值"`
-	MaxCpu    int    `json:"cpu最大值"`
-	MaxMemory int    `json:"memory最大值"`
-	Cutoff    int    `json:"折扣"`
+type AdvisorChinese struct {
+	Region    string  `json:"地域"`
+	Cpu       int     `json:"cpu最小值"`
+	Memory    int     `json:"memory最小值"`
+	MaxCpu    int     `json:"cpu最大值"`
+	MaxMemory int     `json:"memory最大值"`
+	Cutoff    float64 `json:"折扣"`
 }
 
-type AdvisorResponse struct {
-	InstanceTypeId string
-	ZoneId         string
-	PricePerCore   string
+func NewAdisorByReq(vals *url.Values, cfg *Config, notEmptyField *[]string) (*Advisor, error) {
+	if vals == nil {
+		return NewAdvisor(nil)
+	}
+
+	jsonBytes, err := TransToJsonBytes(vals, cfg, notEmptyField)
+	if jsonBytes == nil || err != nil {
+		if notEmptyField == nil {
+			notEmptyField = &[]string{"nil"}
+		}
+		logger.WithFields(logger.Fields{"to_trans_json_data": *vals, "not_empty_field": *notEmptyField, "error": err}).
+			Errorf("trans to advisor json bytes error:")
+		return nil, err
+	}
+	return NewAdvisor(&jsonBytes)
 }
 
-type AdvisorChangedInstance struct {
-	InstanceTypeId   string
-	ZoneId           string
-	PricePerCore     string
-	LastPricePerCore string
-}
-
-func NewAdvisor(reqJson []byte) (*Advisor, error) {
+func NewAdvisor(reqJson *[]byte) (*Advisor, error) {
 	advisor := &Advisor{
 		AccessKeyId:     "",
 		AccessKeySecret: "",
@@ -64,21 +71,19 @@ func NewAdvisor(reqJson []byte) (*Advisor, error) {
 		MaxCpu:          DEFAULTMAXCPU,
 		MaxMemory:       64,
 		Family:          DEFAULTFAMILY,
-		Cutoff:          2,
+		Cutoff:          2.0,
 		Limit:           DEFAULTLIMIT,
 		Resolution:      7,
 	}
 
-	if len(reqJson) == 0 {
+	if reqJson == nil || len(*reqJson) == 0 {
 		return advisor, nil
-		//return nil, fmt.Errorf("cannot be empty")
 	}
 
-	err := json.Unmarshal(reqJson, advisor)
+	err := json.Unmarshal(*reqJson, advisor)
 	if err != nil {
 		return nil, err
 	}
-
 	return advisor, nil
 }
 
@@ -103,4 +108,40 @@ func (req *Advisor) SpotPricesAnalysis() (SortedInstancePrices, error) {
 	spotInstancePrices := metastore.SpotPricesAnalysis(historyPrices)
 
 	return spotInstancePrices, nil
+}
+
+func (advisor *Advisor) GetAnalysisRes() *[]InstancePrice {
+	// get current value
+	if advisor == nil {
+		logger.Error("get advisor response input error: advisor is nil")
+		return nil
+	}
+	spotInstancePrices, err := advisor.SpotPricesAnalysis()
+	if err != nil {
+		logger.WithFields(logger.Fields{
+			"spotInstancePrices": spotInstancePrices,
+			"error":              err,
+		}).Errorf("get spotInstancePrices error :")
+		return nil
+	}
+
+	if len(spotInstancePrices) == 0 {
+		logger.WithFields(logger.Fields{
+			"spotInstancePrices": spotInstancePrices,
+			"error":              nil,
+		}).Errorf("spot prices analysis get empty spotInstancePrices :")
+		return nil
+	}
+	sort.Sort(spotInstancePrices)
+
+	resp := []InstancePrice{}
+	count := 0
+	for _, item := range spotInstancePrices {
+		if count >= advisor.Limit {
+			break
+		}
+		resp = append(resp, item)
+		count++
+	}
+	return &resp
 }

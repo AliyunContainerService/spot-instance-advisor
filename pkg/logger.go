@@ -10,7 +10,7 @@ const (
 	LOGFILE string = "logfile.log"
 )
 
-func ConfigLogger(logLevelStr string) {
+func ConfigLogger(logLevelStr *string) {
 	// Create the log file if doesn't exist. And append to it if it already exists.
 	f, err := os.OpenFile(LOGFILE, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
@@ -26,8 +26,9 @@ func ConfigLogger(logLevelStr string) {
 	Formatter.FullTimestamp = true
 	logger.SetFormatter(Formatter)
 
-	loglevel, err := logger.ParseLevel(logLevelStr)
+	loglevel, err := logger.ParseLevel(*logLevelStr)
 	if err != nil {
+		*logLevelStr = logger.WarnLevel.String()
 		logger.SetLevel(logger.WarnLevel)
 	} else {
 		logger.SetLevel(loglevel)
