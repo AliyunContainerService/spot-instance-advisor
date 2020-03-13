@@ -46,6 +46,11 @@ func AlarmHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func alarmsByCron(alarmConvMap pkg.EnvAlarmConfig) {
+	if alarmConvMap == nil {
+		logger.Warn("alarmsByCron input is empty nothing to alarm")
+		return
+	}
+
 	parser := cron.NewParser(
 		cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 	c := cron.New(cron.WithParser(parser))
@@ -89,6 +94,11 @@ func alarmsByCron(alarmConvMap pkg.EnvAlarmConfig) {
 }
 
 func alarmJob(advisor *pkg.Advisor, convTitle string, alarmConfig *pkg.AlarmConfig, alarmRecord AlarmJobRecord) {
+	if alarmConfig == nil {
+		logger.Warn("alarm config is empty")
+		return
+	}
+
 	*alarmRecord.NewChanged = []pkg.InstancePrice{}
 
 	sortedInstancePrices := advisor.GetAnalysisRes()

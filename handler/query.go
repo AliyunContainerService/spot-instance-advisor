@@ -24,8 +24,8 @@ func SpotHandler(w http.ResponseWriter, r *http.Request) {
 	advisor, err := pkg.NewAdisorByReq(&vals, pkg.Cfg, &QUERYNOTEMPTYFIELD)
 	if err != nil {
 		logger.WithFields(logger.Fields{
-			"advisor": *advisor,
-			"error":   err,
+			"input_val": vals,
+			"error":     err,
 		}).Errorf("new advisor error :")
 		resp = pkg.PackageResp(false, "new advisor err: "+err.Error(), nil)
 		pkg.SendResponse(w, resp)
