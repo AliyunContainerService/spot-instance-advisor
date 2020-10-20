@@ -1,5 +1,3 @@
 language: go
-go: 
- - 1.8.x
- - tip
+go: 1.3
 
